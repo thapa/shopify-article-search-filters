@@ -1,0 +1,25 @@
+{%- if predictive_search.performed -%}
+
+    {{ 'redesign_filter-blogs.css' | asset_url | stylesheet_tag }}
+    {{ 'redesign-article_card.css' | asset_url | stylesheet_tag }}
+    
+    <div id="predictive-search-results" role="listbox">    
+     
+        <div class="predictive-search__result-group">        
+          {%- if predictive_search.resources.articles.size > 0 or predictive_search.resources.pages.size > 0 -%}
+            <ul class="ate_filter-blog-list">
+              {%- for article in predictive_search.resources.articles -%}
+                {% if article.url contains 'stories' %}
+                  <li class="ate_blog-item">
+                    {% render 'redesign-article_card', u_article: article %}
+                  </li>
+                  {% endif %}
+              {% endfor %}
+            </ul>        
+            
+          {%- endif -%}
+        </div>    
+      
+    </div>
+  
+  {%- endif -%}

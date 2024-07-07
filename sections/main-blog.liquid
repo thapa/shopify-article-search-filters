@@ -1,0 +1,272 @@
+{{ 'redesign_filter-blogs.css' | asset_url | stylesheet_tag }}
+{{ 'redesign-article_card.css' | asset_url | stylesheet_tag }}
+
+<section
+  class="ate_filter-blogs"
+  id="ate_filter-blogs"
+  style="--filter_bg-color: {{ section.settings.color }}"
+  data-section-id="{{ section.id }}"
+>
+  <div class="wrapper">
+    <div class="ate_filter-wrapper">
+      <div class="ate_title_wrapper">
+        <div class="ate_filter-title">
+          <h2 class="title h3">{{ section.settings.title }}</h2>
+        </div>
+        <div class="ate_filter-grid">
+          
+          <details>
+            <summary class="ate_filter-btn">
+             {% if current_tags %}{{ current_tags }}{% else %}Filter by{% endif %}
+            </summary>
+            <div class="filter-tag-list">
+              <ul>
+                <li><a href="{{ blog.url }}">All</a></li>
+                {% for tag in blog.all_tags %}
+                  <li>{{ tag | link_to_tag: tag }}</li>
+                {% endfor %}
+              </ul>
+            </div>
+          </details>
+          
+        </div>
+      </div>
+      <div class="ate_search_wrapper">
+        <script src="{{ 'predictive-search.js' | asset_url }}" defer="defer"></script>
+
+          <predictive-search>
+            <form action="{{ routes.search_url }}" method="get" role="search">              
+              <input
+                id="Search"
+                type="search"
+                name="q"
+                value="{{ search.terms | escape }}"
+                role="combobox"
+                aria-expanded="false"
+                aria-owns="predictive-search-results"
+                aria-controls="predictive-search-results"
+                aria-haspopup="listbox"
+                aria-autocomplete="list"
+                placeholder="Search"
+              >
+              <input name="options[prefix]" type="hidden" value="last">
+          
+              <div id="predictive-search" tabindex="-1"></div>
+            </form>
+          </predictive-search>
+        
+      </div>
+      {%- paginate blog.articles by 3 -%}
+      <div class="ate_blogs_wrapper">
+        <ul class="ate_filter-blog-list">
+          {% assign articles = blog.articles %}          
+          {% for article in articles %}
+            <li class="ate_blog-item">
+              {% render 'redesign-article_card', u_article: article %}
+            </li>
+          {% endfor %}
+        </ul>
+        {%- if paginate.pages > 1 -%}
+          {%- if paginate.next -%}
+          <div class="ate_load-more">
+            <button class="ate_more-btn btn" data-next-page="{{ paginate.next.url }}">Load more</button>
+          </div>
+            {% endif %}
+        {% endif %}
+      </div>
+      {% endpaginate %}
+    </div>
+  </div>
+</section>
+
+<script>  
+   window.addEventListener("load", (event) => {
+    document.querySelector('body').addEventListener("click", async function (event) {
+
+        const sectionDiv = document.querySelector('#shopify-section-{{ section.id }}');
+        const targetblogList = sectionDiv.querySelector('.ate_filter-blog-list');
+        const targetLoadMoreBtnWrap = sectionDiv.querySelector('.ate_load-more');
+        
+        if (event.target && event.target.matches(".filter-tag-list a")) {
+            event.preventDefault();
+            const url = event.target.href;
+          
+            sectionDiv.classList.add('loading');
+
+            try {
+                const res = await fetch(url + "?sections={{ section.id }}");
+                if (!res.ok) {
+                    throw new Error('Network response was not ok ' + res.statusText);
+                }
+                const data = await res.json();
+                const sectionHTML = data["{{ section.id }}"];                
+              
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = sectionHTML;
+
+                const divToBeRender = tempDiv.querySelector('#shopify-section-{{ section.id }}');
+                console.log('divToBeRender' , divToBeRender);
+                
+                sectionDiv.innerHTML = divToBeRender.innerHTML;
+
+                history.pushState(null, '', url);
+            } catch (error) {
+                console.error('There has been a problem with your fetch operation:', error);
+            } finally {
+                sectionDiv.classList.remove('loading');
+            }
+        }
+
+
+      if (event.target && event.target.matches(".ate_more-btn")) {
+
+        event.preventDefault();
+        const url = event.target.dataset.nextPage;
+        console.log(url);
+        sectionDiv.classList.add('loading');
+
+        try {
+            const res = await fetch(url + "&sections={{ section.id }}");
+            if (!res.ok) {
+                throw new Error('Network response was not ok ' + res.statusText);
+            }
+            const data = await res.json();
+            const sectionHTML = data["{{ section.id }}"];                
+          
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = sectionHTML;
+
+            const divToBeRender = tempDiv.querySelector('#shopify-section-{{ section.id }}');
+
+            const blogList = divToBeRender.querySelector('.ate_filter-blog-list').innerHTML;
+            const loadMoreBtnWrap = divToBeRender.querySelector('.ate_load-more');
+
+            targetblogList.insertAdjacentHTML('beforeend', blogList);
+             
+              if (loadMoreBtnWrap) {
+                  targetLoadMoreBtnWrap.innerHTML = loadMoreBtnWrap.innerHTML;
+              } else {
+                targetLoadMoreBtnWrap.innerHTML = '';
+              }
+            
+
+        } catch (error) {
+            console.error('There has been a problem with your fetch operation:', error);
+        } finally {
+            sectionDiv.classList.remove('loading');
+        }
+        
+      }
+
+  
+      
+    });
+
+     
+});
+  
+
+
+</script>
+
+{% schema %}
+  {
+  "name": "Redesign - Filter Blogs",
+  "class": "ate_filter-blogs-section",
+  "settings": [
+    {
+      "type":"color",
+      "id":"color",
+      "label":"Background Color"
+    },
+    {
+      "type":"text",
+      "id":"title",
+      "label":"Heading"
+    }
+    ],
+    "blocks": [
+      {
+      "type": "subtitle",
+      "name": "Subtitle",
+      "settings": [
+          {
+            "type":"text",
+            "id":"subtitle",
+            "label":"Sub Title"
+          }
+        ]
+      },
+      {
+      "type": "heading",
+      "name": "Heading",
+      "settings": [
+          {
+            "type":"text",
+            "id":"heading",
+            "label":"Heading"
+          }
+        ]
+      },
+      {
+      "type": "text",
+      "name": "Text",
+      "settings": [
+           {
+            "type":"richtext",
+            "id":"content",
+            "label":"Content"
+          }
+        ]
+      },
+      {
+      "type": "button",
+      "name": "Button",
+      "settings": [
+          {
+            "type":"text",
+            "id":"btn_text",
+            "label":"Button Title"
+          },
+          {
+            "type":"url",
+            "id":"btn_url",
+            "label":"Button URL"
+          }
+        ]
+      },
+      {
+      "type": "spacing",
+      "name": "Spacing",
+      "settings": [
+          {
+            "type": "range",
+            "id": "desktop_gap",
+            "min": 0,
+            "max": 180,
+            "step": 2,
+            "unit": "px",
+            "label": "Desktop Spacing",
+            "default": 36
+          }
+        ]
+      },
+      {
+      "type": "article",
+      "name": "Article",
+      "settings": [
+          {
+            "type":"text",
+            "id":"btn_text",
+            "label":"Button Title"
+          }
+        ]
+      }
+    ],
+    "presets": [
+    {
+      "name": "Redesign - Filter Blogs",
+    }
+]
+  }
+{% endschema %}
